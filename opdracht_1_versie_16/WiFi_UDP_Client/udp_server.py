@@ -45,7 +45,9 @@ import optparse
 import time
 import sys
 
-DEFAULT_IP   = "192.168.43.189"   # IP address of the UDP server
+#DEFAULT_IP   = socket.gethostbyname(socket.gethostname())   # IP address of the 
+DEFAULT_IP = "192.168.43.189"
+#UDP server
 DEFAULT_PORT = 57345             # Port of the UDP server
 
 LED_ON = '1'
@@ -74,12 +76,7 @@ def echo_server(host, port):
     
     while True:
         data, addr = sock.recvfrom(4096)
-        if data == bytes('A', "utf-8"):
-            print('Ready to send command to client')
-            enter_command(sock, addr)
-        else:
-            print("Message from Client: {}".format(data))
-            #enter_command(sock, addr)
+        print(data)
         
 
 if __name__ == '__main__':

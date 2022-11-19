@@ -52,6 +52,8 @@
 #include "queue.h"
 #include "timers.h"
 #include <stdio.h>
+#include "structfile.h"
+#include <stdbool.h>
 extern QueueHandle_t queue_handle;
 
 
@@ -88,6 +90,7 @@ cyhal_ezi2c_t sEzI2C;
 cyhal_ezi2c_slave_cfg_t sEzI2C_sub_cfg;
 cyhal_ezi2c_cfg_t sEzI2C_cfg;
 
+
 /* SysPm callback params */
 cy_stc_syspm_callback_params_t callback_params =
 {
@@ -104,6 +107,10 @@ cy_stc_syspm_callback_t capsense_deep_sleep_cb =
     NULL,
     NULL
 };
+
+/******************************************************************************/
+
+/*******************************************************************************/
 
 
 /*******************************************************************************
@@ -232,14 +239,16 @@ static void process_touch(void)
     /* Variables used to store touch information */
     uint32_t button0_status = 0;
     uint32_t button1_status = 0;
-    uint16_t slider_pos = 0;
     uint8_t slider_touched = 0;
+    uint32_t slider_pos = 0;
+    commant_data_t commant_data;
     cy_stc_capsense_touch_t *slider_touch;
+    bool command;
 
     /* Variables used to store previous touch information */
     static uint32_t button0_status_prev = 0;
     static uint32_t button1_status_prev = 0;
-    static uint16_t slider_pos_perv = 0;
+    static uint32_t slider_pos_perv = 0;
 
 
 
@@ -281,8 +290,11 @@ static void process_touch(void)
     if((0u != slider_touched) && (slider_pos_perv != slider_pos ))
     {
         printf("Slider position %d\n\r",slider_pos);
-        xQueueSend(queue_handle, &slider_pos, 0UL );
+        //sprintf(commant_data.boodschapM, "Capsense position: %d", slider_pos);
+        commant_data.waarde = slider_pos;
+        xQueueSendToBack(queue_handle, &commant_data, 0UL);
     }
+
 
 
 

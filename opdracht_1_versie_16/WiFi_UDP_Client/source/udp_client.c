@@ -42,6 +42,7 @@
 #include "cybsp.h"
 #include "cy_retarget_io.h"
 #include <inttypes.h>
+#include "structfile.h"
 
 /* FreeRTOS header file. */
 #include <FreeRTOS.h>
@@ -99,6 +100,9 @@ cy_socket_sockaddr_t peer_addr;
 /* UDP Client task handle. */
 extern TaskHandle_t client_task_handle;
 extern QueueHandle_t queue_handle;
+uint32_t slider = 0;
+char boodschap[50];
+
 
 /*******************************************************************************
  * Function Name: udp_client_task
@@ -117,6 +121,7 @@ extern QueueHandle_t queue_handle;
 void udp_client_task(void *arg)
 {
     cy_rslt_t result ;
+    commant_data_t commant_data;
 
     /* Variable to store the number of bytes sent to the UDP server. */
     uint32_t bytes_sent = 0;
@@ -154,12 +159,10 @@ void udp_client_task(void *arg)
         CY_ASSERT(0);
     }
 
-    int slider_pos = 0;
-    xQueueReceive(queue_handle,&slider_pos,portMAX_DELAY );
     /* First send data to Server and wait to receive command */
-    char boodschap[50];
-    sprintf(boodschap, "Capsense position: %d", &slider_pos);
-    result = cy_socket_sendto(client_handle, boodschap, strlen(boodschap), CY_SOCKET_FLAGS_NONE,
+
+
+    result = cy_socket_sendto(client_handle, START_COMM_MSG, strlen(START_COMM_MSG), CY_SOCKET_FLAGS_NONE,
                                 &udp_server_addr, sizeof(cy_socket_sockaddr_t), &bytes_sent);
     if(result == CY_RSLT_SUCCESS)
     {
@@ -169,56 +172,32 @@ void udp_client_task(void *arg)
     {
         printf("Failed to send data to server. Error : %"PRIu32"\n", result);
     }
+    uint32_t prev_pos = 0;
 
     while(true)
-    {
-        /* Wait till ON/OFF command is received from UDP Server . */
-        xTaskNotifyWait(0, 0, &led_state_ack, portMAX_DELAY);
-
-        printf("============================================================\n");
-
-        /* Send acknowledgment to server after setting the LED ON or OFF */
-        if(led_state_ack == LED_ON_CMD)
         {
-            /* Turn the LED ON and set flag to send acknowledgment  */
-            printf("Command received from server to turn on LED\n");
-            cyhal_gpio_write(CYBSP_USER_LED, CYBSP_LED_STATE_ON);
-            printf("LED turned ON\n");
 
-            result = cy_socket_sendto(client_handle, ACK_LED_ON, strlen(ACK_LED_ON), CY_SOCKET_FLAGS_NONE,
-                                        &udp_server_addr, sizeof(cy_socket_sockaddr_t), &bytes_sent);
-            if(result != CY_RSLT_SUCCESS)
-            {
-                printf("Failed to send Acknowledgment to server. Error: %"PRIu32"\n", result);
-            }
-        }
-        else if(led_state_ack == LED_OFF_CMD)
-        {
-            /* Turn the LED OFF and set flag to send acknowledgment */
-            printf("Command received from server to turn off LED\n");
-            cyhal_gpio_write(CYBSP_USER_LED, CYBSP_LED_STATE_OFF);
-            printf("LED turned OFF\n");
+        	//printf("In UDP Client Send Function\n\r");
+            /* Send acknowledgment to server after setting the LED ON or OFF */
 
-            result = cy_socket_sendto(client_handle, ACK_LED_OFF, strlen(ACK_LED_OFF), CY_SOCKET_FLAGS_NONE,
-                                        &udp_server_addr, sizeof(cy_socket_sockaddr_t), &bytes_sent);
-            if(result != CY_RSLT_SUCCESS)
-            {
-                printf("Failed to send acknowledgment to server. Error: %"PRIu32"\n", result);
-            }
+    			
+				xQueueReceive(queue_handle,&commant_data,portMAX_DELAY );
+				//if(slider != prev_pos){
+					sprintf(boodschap, "Capsense position: %d", commant_data.waarde);
+					printf("----- Capsense position: %c\n", commant_data.waarde);
+					result = cy_socket_sendto(client_handle, boodschap, strlen(boodschap), CY_SOCKET_FLAGS_NONE,
+												&udp_server_addr, sizeof(cy_socket_sockaddr_t), &bytes_sent);
+					if(result != CY_RSLT_SUCCESS)
+					{
+						printf("Failed to send Acknowledgment to server. Error: %"PRIu32"\n", result);
+					}
+				//}
+
+
+
+                vTaskDelay(pdMS_TO_TICKS(500));
+                prev_pos = slider;
         }
-        else
-        {
-            printf("Invalid command received.\n");
-            result = cy_socket_sendto(client_handle, INVALID_CMD_MSG, strlen(INVALID_CMD_MSG), CY_SOCKET_FLAGS_NONE,
-                                        &udp_server_addr, sizeof(cy_socket_sockaddr_t), &bytes_sent);
-            if(result != CY_RSLT_SUCCESS)
-            {
-                printf("Failed to send acknowledgment to server. Error: %"PRIu32"\n", result);
-            }
-        }
-        
-        print_heap_usage("After controlling the LED and ACKing the server");
-    }
  }
 
 /*******************************************************************************
