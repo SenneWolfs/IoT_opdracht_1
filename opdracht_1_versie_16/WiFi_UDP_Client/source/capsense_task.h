@@ -68,7 +68,8 @@ typedef enum
 /*******************************************************************************
  * Global variable
  ******************************************************************************/
-extern QueueHandle_t queue_handle;
+extern QueueHandle_t queue_handle_data;
+extern QueueHandle_t queue_handle_command;
 
 
 /*******************************************************************************

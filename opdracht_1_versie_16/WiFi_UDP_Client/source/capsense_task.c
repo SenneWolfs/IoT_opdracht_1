@@ -54,7 +54,8 @@
 #include <stdio.h>
 #include "structfile.h"
 #include <stdbool.h>
-extern QueueHandle_t queue_handle;
+extern QueueHandle_t queue_handle_data;
+extern QueueHandle_t queue_handle_command;
 
 
 
@@ -177,7 +178,7 @@ void capsense_task(void* param)
     for(;;)
     {
         /* Block until a CapSense command has been received over queue */
-        rtos_api_result = xQueueReceive(queue_handle, &capsense_cmd,
+        rtos_api_result = xQueueReceive(queue_handle_command, &capsense_cmd,
                                         portMAX_DELAY);
         //printf("TEST2\n");
         /* Command has been received from capsense_cmd */
@@ -240,7 +241,7 @@ static void process_touch(void)
     uint32_t button0_status = 0;
     uint32_t button1_status = 0;
     uint8_t slider_touched = 0;
-    uint32_t slider_pos = 0;
+    static uint32_t slider_pos = 0;
     commant_data_t commant_data;
     cy_stc_capsense_touch_t *slider_touch;
     bool command;
@@ -292,7 +293,7 @@ static void process_touch(void)
         printf("Slider position %d\n\r",slider_pos);
         //sprintf(commant_data.boodschapM, "Capsense position: %d", slider_pos);
         commant_data.waarde = slider_pos;
-        xQueueSendToBack(queue_handle, &commant_data, 0UL);
+        xQueueSendToBack(queue_handle_data, &commant_data, 0UL);
     }
 
 
@@ -381,7 +382,7 @@ static void capsense_end_of_scan_callback(cy_stc_active_scan_sns_t* active_scan_
 
     /* Send command to process CapSense data */
     capsense_command_t commmand = CAPSENSE_PROCESS;
-    xYieldRequired = xQueueSendToBackFromISR(queue_handle, &commmand, 0u);
+    xYieldRequired = xQueueSendToBackFromISR(queue_handle_command, &commmand, 0u);
     portYIELD_FROM_ISR(xYieldRequired);
 }
 
@@ -406,7 +407,7 @@ static void capsense_timer_callback(TimerHandle_t xTimer)
     (void)xTimer;
 
     /* Send command to start CapSense scan */
-    xYieldRequired = xQueueSendToBackFromISR(queue_handle, &command, 0u);
+    xYieldRequired = xQueueSendToBackFromISR(queue_handle_command, &command, 0u);
     portYIELD_FROM_ISR(xYieldRequired);
 }
 

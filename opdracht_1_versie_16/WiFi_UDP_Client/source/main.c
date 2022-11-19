@@ -55,6 +55,7 @@
 /* UDP client task header file. */
 #include "capsense_task.h"
 #include "udp_client.h"
+#include "structfile.h"
 
 
 
@@ -83,7 +84,8 @@
 TaskHandle_t capsense_task_handle;
 TaskHandle_t client_task_handle;
 
-QueueHandle_t queue_handle;
+QueueHandle_t queue_handle_data;
+QueueHandle_t queue_handle_command;
 
 /*******************************************************************************
 * Function Name: main
@@ -139,7 +141,8 @@ int main(void)
     xTaskCreate(capsense_task, "Capsense task", CAPSENSE_STACK_SIZE, NULL, CAPSENSE_PRIORITY, &capsense_task_handle);
     xTaskCreate(udp_client_task, "Network task", UDP_CLIENT_TASK_STACK_SIZE, NULL,
                 UDP_CLIENT_TASK_PRIORITY, &client_task_handle);
-    queue_handle = xQueueCreate(1,sizeof(uint32_t));
+    queue_handle_command = xQueueCreate(1,sizeof(capsense_command_t));
+    queue_handle_data = xQueueCreate(1,sizeof(commant_data_t));
     printf("TEST\n");
 
 

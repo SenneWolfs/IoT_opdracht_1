@@ -99,7 +99,8 @@ cy_socket_sockaddr_t peer_addr;
 
 /* UDP Client task handle. */
 extern TaskHandle_t client_task_handle;
-extern QueueHandle_t queue_handle;
+extern QueueHandle_t queue_handle_data;
+extern QueueHandle_t queue_handle_command;
 uint32_t slider = 0;
 char boodschap[50];
 
@@ -180,8 +181,8 @@ void udp_client_task(void *arg)
         	//printf("In UDP Client Send Function\n\r");
             /* Send acknowledgment to server after setting the LED ON or OFF */
 
-    			
-				xQueueReceive(queue_handle,&commant_data,portMAX_DELAY );
+
+				xQueueReceive(queue_handle_data,&commant_data,portMAX_DELAY);
 				//if(slider != prev_pos){
 					sprintf(boodschap, "Capsense position: %d", commant_data.waarde);
 					printf("----- Capsense position: %c\n", commant_data.waarde);
@@ -195,7 +196,7 @@ void udp_client_task(void *arg)
 
 
 
-                vTaskDelay(pdMS_TO_TICKS(500));
+                vTaskDelay(pdMS_TO_TICKS(10));
                 prev_pos = slider;
         }
  }
