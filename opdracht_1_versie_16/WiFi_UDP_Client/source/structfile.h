@@ -60,7 +60,7 @@ typedef enum
 {
     CAPSENSE,
     SOUND,
-	THEMPERATURE
+	TEMPERATURE
 } commant_for_udp;
 
 typedef struct
@@ -68,6 +68,7 @@ typedef struct
     commant_for_udp command;
     uint32_t waarde;
     char boodschapM[50];
+    float temp;
 } commant_data_t;
 
 /* END OF FILE [] */

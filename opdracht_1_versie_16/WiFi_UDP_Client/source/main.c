@@ -54,6 +54,8 @@
 
 /* UDP client task header file. */
 #include "capsense_task.h"
+#include "temperature.h"
+//#include "sound.h"
 #include "udp_client.h"
 #include "structfile.h"
 
@@ -71,10 +73,14 @@
 * Macros
 ********************************************************************************/
 /* RTOS related macros. */
-#define CAPSENSE_STACK_SIZE        		(1024)
-#define CAPSENSE_PRIORITY          		(1)
-#define UDP_CLIENT_TASK_STACK_SIZE        (5 * 1024)
-#define UDP_CLIENT_TASK_PRIORITY          (1)
+#define CAPSENSE_STACK_SIZE        		    (1024)
+#define CAPSENSE_PRIORITY          		    (1)
+#define TEMPERATURE_STACK_SIZE        		(1024)
+#define TEMPERATURE_PRIORITY          		(1)
+#define SOUND_STACK_SIZE        		    (1024)
+#define SOUND_PRIORITY          		    (1)
+#define UDP_CLIENT_TASK_STACK_SIZE          (5 * 1024)
+#define UDP_CLIENT_TASK_PRIORITY            (1)
 
 /*******************************************************************************
 * Global Variables
@@ -82,6 +88,8 @@
 
 /* UDP server task handle. */
 TaskHandle_t capsense_task_handle;
+TaskHandle_t temperature_task_handle;
+TaskHandle_t sound_task_handle;
 TaskHandle_t client_task_handle;
 
 QueueHandle_t queue_handle_data;
@@ -139,6 +147,8 @@ int main(void)
 
     /* Create the tasks. */
     xTaskCreate(capsense_task, "Capsense task", CAPSENSE_STACK_SIZE, NULL, CAPSENSE_PRIORITY, &capsense_task_handle);
+    xTaskCreate(temperature_task, "Temperature task", TEMPERATURE_STACK_SIZE, NULL, TEMPERATURE_PRIORITY, &temperature_task_handle);
+    //xTaskCreate(sound_task, "Sound task", SOUND_STACK_SIZE, NULL, SOUND_PRIORITY, &sound_task_handle);
     xTaskCreate(udp_client_task, "Network task", UDP_CLIENT_TASK_STACK_SIZE, NULL,
                 UDP_CLIENT_TASK_PRIORITY, &client_task_handle);
     queue_handle_command = xQueueCreate(1,sizeof(capsense_command_t));

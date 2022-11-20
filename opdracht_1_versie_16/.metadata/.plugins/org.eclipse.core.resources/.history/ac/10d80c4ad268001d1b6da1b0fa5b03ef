@@ -1,0 +1,139 @@
+/*
+ * temperature.c
+ *
+ *  Created on: 20 Nov 2022
+ *      Author: Senne
+ */
+/* Header file includes. */
+#include "cyhal.h"
+#include "cybsp.h"
+#include "cy_retarget_io.h"
+#include "mtb_thermistor_ntc_gpio.h"
+#include <inttypes.h>
+
+
+/* FreeRTOS header file. */
+#include <FreeRTOS.h>
+#include <task.h>
+#include <semphr.h>
+
+/* Standard C header file. */
+#include <string.h>
+
+/* Cypress secure socket header file. */
+#include "cy_secure_sockets.h"
+
+/* Wi-Fi connection manager header files. */
+#include "cy_wcm.h"
+#include "cy_wcm_error.h"
+
+#include "temperature.h"
+
+/*******************************************************************************
+* Function Prototypes
+********************************************************************************/
+float temperature(void);
+
+/*******************************************************************************
+* Global Variables
+********************************************************************************/
+/* Thermistor globals */
+mtb_thermistor_ntc_gpio_t mtb_thermistor_obj1;
+
+cyhal_adc_t adc_obj1;
+
+/* Refer thermistor datasheet for the values */
+mtb_thermistor_ntc_gpio_cfg_t therm_gpio_cfg1=
+    {
+    		.b_const = (float)(3380),         //refers to beta constant
+
+			/* Resistance of the thermistor is 10K at 25 degrees C (from datasheet)
+			 * Therefore R0 = 10000 Ohm, and T0 = 298.15 Kelvin, which gives
+			 * R_INFINITY = R0 e^(-B_CONSTANT / T0) = 0.1192855
+			 */
+
+			.r_infinity = (float)(0.1192855), //refers to resistance at infinity, ideally 0
+			.r_ref = (float)(10000)           //refres to reference resistance
+    };
+
+void temperature_task(void* param)
+{
+	cy_rslt_t result1;
+	/*
+	 * ADC and Thermistor initialization
+	 */
+	result1 = cyhal_adc_init(&adc_obj1, THERM_OUT, NULL);
+
+	if (result1 != CY_RSLT_SUCCESS){
+		CY_ASSERT(0);
+	}
+
+	result1 = mtb_thermistor_ntc_gpio_init(&mtb_thermistor_obj1, &adc_obj1, THERM_GND,THERM_VDD, THERM_OUT, &therm_gpio_cfg1, MTB_THERMISTOR_NTC_WIRING_VIN_R_NTC_GND);
+
+	printf("OK!!!");
+	if (result1 != CY_RSLT_SUCCESS)
+	{
+		CY_ASSERT(0);
+	}
+
+	/* Remove warning for unused parameter */
+	(void)param;
+
+	printf("TEST1.5\n");
+
+	float value;
+	char message_buffer[50];
+	/* Repeatedly running part of the task */
+	for(;;)
+	{
+		printf("============================================================\n");
+		value = temperature();
+		if (value > 0u)
+		{
+			sprintf(message_buffer,"%2.2f",value);
+		}
+
+		else
+		{
+			printf("Invalid values, Please check the thermistor\r\n\n");
+			mtb_thermistor_ntc_gpio_free(&mtb_thermistor_obj1);
+			sprintf(message_buffer,"Invalid values");
+		}
+	}
+}
+
+
+
+/*******************************************************************************
+ * Function Name: temperature
+ *******************************************************************************
+ * Summary:
+ *  Function to handle the temperature readings from the ADC.
+ *
+ * Parameters:
+ *  void: unused
+ *
+ * Return:
+ *  float result: Result of the readings
+ *
+ *******************************************************************************/
+
+float temperature(void)
+{
+	float value;
+	float sum=0;
+	uint8_t loop;
+	for (loop = 0; loop < 10; loop++)
+	{
+		value = mtb_thermistor_ntc_gpio_get_temp(&mtb_thermistor_obj1);
+		sum=sum+value;
+	}
+	sum = sum/10;
+	printf("Temperature is %2.2fC\r\n\n",sum);
+	return sum;
+
+}
+
+/* [] END OF FILE */
+
+
